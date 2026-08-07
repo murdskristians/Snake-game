@@ -19,7 +19,48 @@ class GameUI {
     requestAnimationFrame(this.draw.bind(this));
 
     window.addEventListener("keydown", this.onKeyDown.bind(this), false);
+    this.registerTouchControls();
     window.focus();
+  }
+
+  // A phone has no arrow keys, so without this the game renders but cannot be
+  // played at all. Swiping anywhere on the board steers the snake.
+  registerTouchControls() {
+    const MIN_SWIPE_PX = 24;
+    let startX = 0;
+    let startY = 0;
+
+    this.canvas.addEventListener(
+      "touchstart",
+      (event: TouchEvent) => {
+        const touch = event.changedTouches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+      },
+      { passive: true }
+    );
+
+    this.canvas.addEventListener(
+      "touchend",
+      (event: TouchEvent) => {
+        const touch = event.changedTouches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+
+        // Ignore taps and other incidental contact.
+        if (Math.abs(dx) < MIN_SWIPE_PX && Math.abs(dy) < MIN_SWIPE_PX) return;
+
+        const snake = this.game.getSnake();
+        // The dominant axis decides, so a slightly diagonal swipe still reads
+        // as the direction the player meant.
+        if (Math.abs(dx) > Math.abs(dy)) {
+          snake.setDirection(dx > 0 ? "Right" : "Left");
+        } else {
+          snake.setDirection(dy > 0 ? "Down" : "Up");
+        }
+      },
+      { passive: true }
+    );
   }
 
   draw(time: number) {
@@ -45,12 +86,24 @@ class GameUI {
 
   drawBrand(context: CanvasRenderingContext2D) {
     const { width, height } = this.game.getConfiguration();
+    const text = "Kristians";
 
-    context.font = height / 2.5 + "px Roboto";
+    // Sizing purely off the height overflowed the board once the grid became
+    // square on narrow screens - the word ran off both edges. Measure the text
+    // and shrink it until it fits the width, with the height as the ceiling.
+    let fontSize = height / 2.5;
+    context.font = fontSize + "px Roboto";
+    const maxWidth = width * 0.9;
+    const measured = context.measureText(text).width;
+    if (measured > maxWidth) {
+      fontSize = Math.floor(fontSize * (maxWidth / measured));
+      context.font = fontSize + "px Roboto";
+    }
+
     context.textBaseline = "middle";
     context.textAlign = "center";
     context.fillStyle = "rgba(255,255,255,0.75)";
-    context.fillText("Kristians", width / 2, height / 2);
+    context.fillText(text, width / 2, height / 2);
   }
 
   drawScore(context: CanvasRenderingContext2D) {
@@ -191,18 +244,34 @@ class GameUI {
   }
 }
 
+// An 80x40 board squeezed into a phone gives cells under 5px across - visible
+// but not really playable, and the 2:1 shape wastes a portrait screen. A
+// coarser square grid keeps the cells finger-sized and fills the space.
+const NARROW_VIEWPORT_PX = 768;
+const MOBILE_CELLS = 30;
+
+const getGridSize = () => {
+  const narrow =
+    typeof window !== "undefined" && window.innerWidth < NARROW_VIEWPORT_PX;
+  return narrow
+    ? { x: MOBILE_CELLS, y: MOBILE_CELLS }
+    : { x: CELLS_HORIZONTAL, y: CELLS_VERTICAL };
+};
+
+const grid = getGridSize();
+
 const createCanvas = (): HTMLCanvasElement => {
   const container = document.getElementById("game")!;
   const canvas = document.createElement("Canvas") as HTMLCanvasElement;
   container.appendChild(canvas);
 
-  // canvas element size in the page
-  canvas.style.width = CELLS_HORIZONTAL * CELL_SIZE + "px";
-  canvas.style.height = CELLS_VERTICAL * CELL_SIZE + "px";
+  // Display size is left to the stylesheet so the board can scale down to the
+  // viewport; only the aspect ratio has to follow the grid.
+  canvas.style.aspectRatio = grid.x + " / " + grid.y;
 
   // image buffer size
-  canvas.width = CELLS_HORIZONTAL * CELL_SIZE * SCALE;
-  canvas.height = CELLS_VERTICAL * CELL_SIZE * SCALE;
+  canvas.width = grid.x * CELL_SIZE * SCALE;
+  canvas.height = grid.y * CELL_SIZE * SCALE;
 
   return canvas;
 };
@@ -213,10 +282,10 @@ const createConfiguration = (canvas: HTMLCanvasElement): Configuration => {
     speed: SPEED,
     width: canvas.width,
     height: canvas.height,
-    nbCellsX: CELLS_HORIZONTAL,
-    nbCellsY: CELLS_VERTICAL,
-    cellWidth: canvas.width / CELLS_HORIZONTAL,
-    cellHeight: canvas.height / CELLS_VERTICAL,
+    nbCellsX: grid.x,
+    nbCellsY: grid.y,
+    cellWidth: canvas.width / grid.x,
+    cellHeight: canvas.height / grid.y,
     apples: 5
   };
 };

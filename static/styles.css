@@ -12,6 +12,25 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100vw;
-    padding-top: 4vh;
+    /* 100vw counts the scrollbar gutter and forces a horizontal scrollbar on
+       any desktop window that has one. */
+    width: 100%;
+    padding: 4vh 8px 0;
+    box-sizing: border-box;
+}
+
+/* The canvas was given a fixed 1600x800 CSS size (80 cells x 20px), so on a
+   390px phone it spanned -605px to 995px and only the middle of the board was
+   on screen. The drawing buffer is untouched - only the displayed size scales -
+   so the game logic and rendering are unchanged. */
+#game canvas {
+    width: 100%;
+    max-width: 1600px;
+    height: auto;
+    /* Fallback only - GameUI sets the real ratio inline, because the grid is
+       squarer on narrow screens. */
+    aspect-ratio: 2 / 1;
+    /* The board is the control surface on touch: let it own the gesture so the
+       browser does not treat a swipe as a page scroll. */
+    touch-action: none;
 }
