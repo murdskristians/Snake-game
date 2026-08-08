@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "dev": "parcel ./static/index.html",
     "start": "parcel ./static/index.html",
     "build": "parcel build ./static/index.html",
     "test": "jest --env=node --colors test --watch",
