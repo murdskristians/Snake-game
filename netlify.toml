@@ -1,0 +1,6 @@
+# Parcel 1 builds fine on Node 22 once the lockfile resolves a current deasync
+# (0.1.31) — the original 2019 lockfile pinned a version whose native addon no
+# longer compiles. Install with npm: pnpm 10 blocks dependency build scripts,
+# which leaves deasync unbuilt and makes Parcel's bundling fail.
+[build.environment]
+  NODE_VERSION = "22"

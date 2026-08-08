@@ -18,6 +18,14 @@
     "parcel-bundler": "^1.12.3",
     "typescript": "^3.6.2",
     "prettier": "1.18.2",
-    "ts-jest": "^24.0.2"
+    "ts-jest": "^24.0.2",
+    "cssnano": "^4.1.11"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "core-js",
+      "deasync",
+      "parcel-bundler"
+    ]
   }
 }
